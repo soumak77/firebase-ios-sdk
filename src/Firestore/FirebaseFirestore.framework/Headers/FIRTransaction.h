@@ -20,7 +20,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FIRDocumentReference;
 @class FIRDocumentSnapshot;
-@class FIRSetOptions;
 
 /**
  * `FIRTransaction` provides methods to read and write data within a transaction.
@@ -50,19 +49,43 @@ NS_SWIFT_NAME(Transaction)
 
 /**
  * Writes to the document referred to by `document`. If the document doesn't yet exist,
- * this method creates it and then sets the data. If you pass `FIRSetOptions`, the provided data
- * will be merged into an existing document.
+ * this method creates it and then sets the data. If you pass `merge:YES`, the provided data will be
+ * merged into any existing document.
  *
  * @param data An `NSDictionary` that contains the fields and data to write to the document.
  * @param document A reference to the document whose data should be overwritten.
- * @param options A `FIRSetOptions` used to configure the set behavior.
+ * @param merge Whether to merge the provided data into any existing document.
  * @return This `FIRTransaction` instance. Used for chaining method calls.
  */
 // clang-format off
 - (FIRTransaction *)setData:(NSDictionary<NSString *, id> *)data
                 forDocument:(FIRDocumentReference *)document
-                    options:(FIRSetOptions *)options
-    NS_SWIFT_NAME(setData(_:forDocument:options:));
+                      merge:(BOOL)merge
+    NS_SWIFT_NAME(setData(_:forDocument:merge:));
+// clang-format on
+
+/**
+ * Writes to the document referred to by `document` and only replace the fields
+ * specified under `mergeFields`. Any field that is not specified in `mergeFields`
+ * is ignored and remains untouched. If the document doesn't yet exist,
+ * this method creates it and then sets the data.
+ *
+ * It is an error to include a field in `mergeFields` that does not have a corresponding
+ * value in the `data` dictionary.
+ *
+ * @param data An `NSDictionary` containing the fields that make up the document
+ * to be written.
+ * @param document A reference to the document whose data should be overwritten.
+ * @param mergeFields An `NSArray` that contains a list of `NSString` or `FIRFieldPath` elements
+ *     specifying which fields to merge. Fields can contain dots to reference nested fields within
+ *     the document.
+ * @return This `FIRTransaction` instance. Used for chaining method calls.
+ */
+// clang-format off
+- (FIRTransaction *)setData:(NSDictionary<NSString *, id> *)data
+                forDocument:(FIRDocumentReference *)document
+                mergeFields:(NSArray<id> *)mergeFields
+    NS_SWIFT_NAME(setData(_:forDocument:mergeFields:));
 // clang-format on
 
 /**

@@ -16,6 +16,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import "FIRFirestoreSource.h"
 #import "FIRListenerRegistration.h"
 
 @class FIRFieldPath;
@@ -24,46 +25,6 @@
 @class FIRDocumentSnapshot;
 
 NS_ASSUME_NONNULL_BEGIN
-
-/**
- * Options for use with `[FIRQuery addSnapshotListener]` to control the behavior of the snapshot
- * listener.
- */
-NS_SWIFT_NAME(QueryListenOptions)
-@interface FIRQueryListenOptions : NSObject
-
-+ (instancetype)options NS_SWIFT_UNAVAILABLE("Use initializer");
-
-- (instancetype)init;
-
-@property(nonatomic, assign, readonly) BOOL includeQueryMetadataChanges;
-
-/**
- * Sets the includeQueryMetadataChanges option which controls whether metadata-only changes on the
- * query (i.e. only `FIRQuerySnapshot.metadata` changed) should trigger snapshot events. Default is
- * NO.
- *
- * @param includeQueryMetadataChanges Whether to raise events for metadata-only changes on the
- *     query.
- * @return The receiver is returned for optional method chaining.
- */
-- (instancetype)includeQueryMetadataChanges:(BOOL)includeQueryMetadataChanges
-    NS_SWIFT_NAME(includeQueryMetadataChanges(_:));
-
-@property(nonatomic, assign, readonly) BOOL includeDocumentMetadataChanges;
-
-/**
- * Sets the includeDocumentMetadataChanges option which controls whether document metadata-only
- * changes (i.e. only `FIRDocumentSnapshot.metadata` on a document contained in the query
- * changed) should trigger snapshot events. Default is NO.
- *
- * @param includeDocumentMetadataChanges Whether to raise events for document metadata-only changes.
- * @return The receiver is returned for optional method chaining.
- */
-- (instancetype)includeDocumentMetadataChanges:(BOOL)includeDocumentMetadataChanges
-    NS_SWIFT_NAME(includeDocumentMetadataChanges(_:));
-
-@end
 
 typedef void (^FIRQuerySnapshotBlock)(FIRQuerySnapshot *_Nullable snapshot,
                                       NSError *_Nullable error);
@@ -84,11 +45,31 @@ NS_SWIFT_NAME(Query)
 /**
  * Reads the documents matching this query.
  *
+ * This method attempts to provide up-to-date data when possible by waiting for
+ * data from the server, but it may return cached data or fail if you are
+ * offline and the server cannot be reached. See the
+ * `getDocuments(source:completion:)` method to change this behavior.
+ *
  * @param completion a block to execute once the documents have been successfully read.
  *     documentSet will be `nil` only if error is `non-nil`.
  */
 - (void)getDocumentsWithCompletion:(FIRQuerySnapshotBlock)completion
     NS_SWIFT_NAME(getDocuments(completion:));
+
+/**
+ * Reads the documents matching this query.
+ *
+ * @param source indicates whether the results should be fetched from the cache
+ *     only (`Source.cache`), the server only (`Source.server`), or to attempt
+ *     the server and fall back to the cache (`Source.default`).
+ * @param completion a block to execute once the documents have been successfully read.
+ *     documentSet will be `nil` only if error is `non-nil`.
+ */
+// clang-format off
+- (void)getDocumentsWithSource:(FIRFirestoreSource)source
+                    completion:(FIRQuerySnapshotBlock)completion
+    NS_SWIFT_NAME(getDocuments(source:completion:));
+// clang-format on
 
 /**
  * Attaches a listener for QuerySnapshot events.
@@ -103,16 +84,17 @@ NS_SWIFT_NAME(Query)
 /**
  * Attaches a listener for QuerySnapshot events.
  *
- * @param options Options controlling the listener behavior.
+ * @param includeMetadataChanges Whether metadata-only changes (i.e. only
+ *     `FIRDocumentSnapshot.metadata` changed) should trigger snapshot events.
  * @param listener The listener to attach.
  *
  * @return A FIRListenerRegistration that can be used to remove this listener.
  */
 // clang-format off
-- (id<FIRListenerRegistration>)addSnapshotListenerWithOptions:
-                                   (nullable FIRQueryListenOptions *)options
-                                                     listener:(FIRQuerySnapshotBlock)listener
-    NS_SWIFT_NAME(addSnapshotListener(options:listener:));
+- (id<FIRListenerRegistration>)
+addSnapshotListenerWithIncludeMetadataChanges:(BOOL)includeMetadataChanges
+                                     listener:(FIRQuerySnapshotBlock)listener
+    NS_SWIFT_NAME(addSnapshotListener(includeMetadataChanges:listener:));
 // clang-format on
 
 #pragma mark - Filtering Data
@@ -254,6 +236,38 @@ NS_SWIFT_NAME(Query)
 // clang-format off
 - (FIRQuery *)queryWhereFieldPath:(FIRFieldPath *)path
            isGreaterThanOrEqualTo:(id)value NS_SWIFT_NAME(whereField(_:isGreaterThanOrEqualTo:));
+// clang-format on
+
+/**
+ * Creates and returns a new `FIRQuery` with the additional filter that documents must contain
+ * the specified field, it must be an array, and the array must contain the provided value.
+ *
+ * A query can have only one arrayContains filter.
+ *
+ * @param field The name of the field containing an array to search
+ * @param value The value that must be contained in the array
+ *
+ * @return The created `FIRQuery`.
+ */
+// clang-format off
+- (FIRQuery *)queryWhereField:(NSString *)field
+                arrayContains:(id)value NS_SWIFT_NAME(whereField(_:arrayContains:));
+// clang-format on
+
+/**
+ * Creates and returns a new `FIRQuery` with the additional filter that documents must contain
+ * the specified field, it must be an array, and the array must contain the provided value.
+ *
+ * A query can have only one arrayContains filter.
+ *
+ * @param path The path of the field containing an array to search
+ * @param value The value that must be contained in the array
+ *
+ * @return The created `FIRQuery`.
+ */
+// clang-format off
+- (FIRQuery *)queryWhereFieldPath:(FIRFieldPath *)path
+                    arrayContains:(id)value NS_SWIFT_NAME(whereField(_:arrayContains:));
 // clang-format on
 
 /**

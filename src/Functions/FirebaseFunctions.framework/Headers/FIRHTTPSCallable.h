@@ -24,7 +24,6 @@ NS_SWIFT_NAME(HTTPSCallableResult)
 
 - (id)init NS_UNAVAILABLE;
 
-
 /**
  * The data that was returned from the Callable HTTPS trigger.
  *
@@ -85,7 +84,8 @@ NS_SWIFT_NAME(HTTPSCallable)
 // clang-format off
 // because it incorrectly breaks this NS_SWIFT_NAME.
 - (void)callWithObject:(nullable id)data
-            completion:(void (^)(FIRHTTPSCallableResult *_Nullable result, NSError *_Nullable error))completion
+            completion:(void (^)(FIRHTTPSCallableResult *_Nullable result,
+                                 NSError *_Nullable error))completion
     NS_SWIFT_NAME(call(_:completion:));
 // clang-format on
 
